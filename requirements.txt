@@ -1,0 +1,7 @@
+streamlit
+langgraph
+openai
+pandas
+matplotlib
+seaborn
+numpy
