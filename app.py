@@ -5,6 +5,11 @@ import io
 import os
 import tempfile, shutil
 from src.agent.graph import build_graph
+from langchain.memory import ConversationBufferMemory
+
+@st.cache_resource
+def get_compiled_graph():
+    return build_graph()
 
 st.set_page_config(page_title="CSV Agent Chat", page_icon="📊", layout="wide")
 
@@ -21,6 +26,8 @@ if "csv_info" not in st.session_state:
     st.session_state.csv_info = None
 if "temp_dir" not in st.session_state:
     st.session_state.temp_dir = tempfile.mkdtemp()
+if 'conversation_memory' not in st.session_state:
+    st.session_state.conversation_memory = ConversationBufferMemory(return_messages=True)
 
 st.title("📊 CSV Insight Bot")
 st.markdown("Converse com seus dados de forma natural!")
@@ -55,11 +62,13 @@ with st.sidebar:
                 📊 **Arquivo carregado com sucesso!**
 
                 **{uploaded_file.name}**
-                - 📝 {len(preview_df)} linhas
+                - 📝 {len(preview_df):,} linhas
                 - 📊 {len(preview_df.columns)} colunas
                 - 🏷️ Colunas: {', '.join(preview_df.columns[:5])}{'...' if len(preview_df.columns) > 5 else ''}
 
-                Pergunte, explore e visualize seus dados de forma simples.! 🚀
+                🎯 **Análise completa: Todos os {len(preview_df):,} registros serão analisados para máxima precisão**
+                
+                Pergunte, explore e visualize seus dados de forma simples! 🚀
                 """
 
                 st.session_state.system_messages = [
@@ -109,14 +118,16 @@ messages_container = st.container()
 with messages_container:
     for message in st.session_state.system_messages:
         with st.chat_message(message["role"]):
-            st.write(message["content"])
+            st.markdown(message["content"], unsafe_allow_html=False)
 
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
-            st.write(message["content"])
-
+            st.markdown(message["content"], unsafe_allow_html=False)
             if message.get("image"):
-                st.image(message["image"], caption="Visualização gerada", use_container_width=True)
+                st.image(message["image"], caption="Visualização gerada")
+            if message.get("code"):
+                with st.expander("🔍 Ver código Python"):
+                    st.code(message["code"], language="python")
             if message.get("processing_time"):
                 st.caption(f"⏱️ Processado em {message['processing_time']:.1f}s")
 
@@ -145,7 +156,7 @@ if st.session_state.csv_loaded and api_key:
             status_text.text("🔄 Carregando dados...")
             progress_bar.progress(20)
 
-            graph = build_graph()
+            graph = get_compiled_graph()
 
             status_text.text("🧠 Analisando pergunta...")
             progress_bar.progress(40)
@@ -153,9 +164,18 @@ if st.session_state.csv_loaded and api_key:
             status_text.text("⚡ Processando dados...")
             progress_bar.progress(60)
 
-            result = graph.invoke(
-                {"file": uploaded_file, "question": user_input, "api_key": api_key}
-            )
+            csv_bytes = uploaded_file.getvalue()
+            graph_input = {
+                "file_content": csv_bytes,
+                "question": user_input,
+                "api_key": api_key,
+                "memory": st.session_state.get("conversation_memory"),
+            }
+
+            result = graph.invoke(graph_input)
+
+            if "memory" in result:
+                st.session_state.conversation_memory = result["memory"]
 
             status_text.text("🎨 Gerando visualização...")
             progress_bar.progress(80)
@@ -181,6 +201,7 @@ if st.session_state.csv_loaded and api_key:
 
             progress_bar.empty()
             status_text.empty()
+            st.rerun()
 
         except Exception as e:
             processing_time = time.time() - start_time
@@ -195,8 +216,7 @@ if st.session_state.csv_loaded and api_key:
                     "processing_time": processing_time,
                 }
             )
-
-        st.rerun()
+            st.rerun()
 
 else:
     if not api_key:
