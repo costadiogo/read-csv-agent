@@ -3,7 +3,7 @@ from src.agent import nodes
 
 def build_graph():
     graph = StateGraph(dict)
-
+    
     graph.add_node("load_csv", nodes.load_csv)
     graph.add_node("answer_question", nodes.answer_question)
     graph.add_node("execute_code", nodes.execute_code)
