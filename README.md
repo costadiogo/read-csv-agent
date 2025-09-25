@@ -12,28 +12,27 @@ Aplicação Streamlit para conversar com dados em CSV. Você faz perguntas em li
 - **Upload de CSV**: leitura via `pandas.read_csv` com limpeza básica de nomes de colunas
 - **Chat NL↔︎Dados**: perguntas em linguagem natural sobre o dataset
 - **Geração de código**: o LLM decide quando responder com texto ou com código Python para análise/plot
-- **Amostragem automática**: `df_small = df.sample(min(1000, len(df)), random_state=42)` para escala e responsividade
 - **Execução segura controlada**: execução do código em ambiente controlado, backend `Agg` e captura de stdout
 - **Gráficos automáticos**: histograma, heatmap de correlação, boxplot e variações (conforme pergunta)
-- **UX**: barra de progresso, mensagens de sistema e cache temporário de imagem
 
 ## Arquitetura
 
 ```
-app.py (UI Streamlit)
-  └─ build_graph() -> src/agent/graph.py (LangGraph)
-       ├─ load_csv -> src/agent/nodes.py
-       ├─ answer_question (LLM decide texto/código)
-       ├─ execute_code (exec do código + geração de imagem)
-       └─ format_output (extrai resposta final)
+src/
+├── cases/         
+├── nodes/         
+├── prompt/        
+└── workflow/      
+app.py
+requirements.txt
 ```
 
-- `src/agent/graph.py`: define o grafo (`load_csv` → `answer_question` → `execute_code` → `format_output`).
-- `src/agent/nodes.py`:
-  - `load_csv`: lê CSV, guarda `df` global, publica `schema`/`data_info`.
-  - `answer_question`: usa OpenAI (`gpt-4o-mini`) para decidir e/ou gerar código; força análise se detectar termos de visualização.
-  - `execute_code`: prepara ambiente seguro (Ajusta `savefig` para `img_path`, backend `Agg`), executa código e captura imagem.
-  - `format_output`: extrai `{"answer": ...}` do stdout e define `final_answer`.
+### Detalhes dos Módulos
+
+- **cases/**: Implementa diferentes tipos de análise sobre o CSV, como média, boxplot, correlação, variabilidade, etc. Cada arquivo representa um tipo de caso tratado pelo agente.
+- **nodes/**: Contém os nós do workflow, responsáveis por tarefas como carregar o CSV, responder perguntas, executar código Python e formatar a saída para o usuário.
+- **prompt/**: Define os prompts utilizados para orientar o modelo de linguagem na análise dos dados e na geração das respostas.
+- **workflow/**: Monta o grafo de execução que conecta os nós e casos, orquestrando o processamento das perguntas do usuário.
 
 ## Pré-requisitos
 
@@ -74,19 +73,9 @@ No app:
 - Faça upload do CSV
 - Envie perguntas pelo campo de chat
 
-## Estrutura do projeto
-
-```
-read-csv-agent/
-  app.py                 # UI Streamlit e orquestração
-  requirements.txt       # dependências
-  src/agent/graph.py     # definição do LangGraph
-  src/agent/nodes.py     # nós: load_csv, answer_question, execute_code, format_output
-```
-
 ## Configuração de modelos
 
-O código usa `gpt-4o-mini` por padrão. Para ajustar, edite `src/agent/nodes.py` em `answer_question`.
+O código usa `gpt-4o-mini` por padrão. Para ajustar, edite `src/nodes/answer_question_node.py` em `answer_question`.
 
 
 ## Licença

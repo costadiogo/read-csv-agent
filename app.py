@@ -4,7 +4,7 @@ import time
 import io
 import os
 import tempfile, shutil
-from src.agent.graph import build_graph
+from src.workflow.graph import build_graph
 from langchain.memory import ConversationBufferMemory
 
 @st.cache_resource
