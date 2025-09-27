@@ -125,9 +125,6 @@ with messages_container:
             st.markdown(message["content"], unsafe_allow_html=False)
             if message.get("image"):
                 st.image(message["image"], caption="Visualização gerada")
-            if message.get("code"):
-                with st.expander("🔍 Ver código Python"):
-                    st.code(message["code"], language="python")
             if message.get("processing_time"):
                 st.caption(f"⏱️ Processado em {message['processing_time']:.1f}s")
 
