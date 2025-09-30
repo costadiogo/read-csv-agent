@@ -18,8 +18,7 @@ Aplicação Streamlit para conversar com dados em CSV. Você faz perguntas em li
 ## Arquitetura
 
 ```
-src/
-├── cases/         
+src/       
 ├── nodes/         
 ├── prompt/        
 └── workflow/      
@@ -28,8 +27,6 @@ requirements.txt
 ```
 
 ### Detalhes dos Módulos
-
-- **cases/**: Implementa diferentes tipos de análise sobre o CSV, como média, boxplot, correlação, variabilidade, etc. Cada arquivo representa um tipo de caso tratado pelo agente.
 - **nodes/**: Contém os nós do workflow, responsáveis por tarefas como carregar o CSV, responder perguntas, executar código Python e formatar a saída para o usuário.
 - **prompt/**: Define os prompts utilizados para orientar o modelo de linguagem na análise dos dados e na geração das respostas.
 - **workflow/**: Monta o grafo de execução que conecta os nós e casos, orquestrando o processamento das perguntas do usuário.
